@@ -1,0 +1,37 @@
+canny_edge.c:476:5: note: loop vectorized
+canny_edge.c:460:5: note: loop vectorized
+canny_edge.c:460:5: note: loop versioned for vectorization because of possible aliasing
+canny_edge.c:476:5: note: loop turned into non-loop; it never loops.
+canny_edge.c:476:5: note: loop with 7 iterations completely unrolled
+canny_edge.c:460:5: note: loop turned into non-loop; it never loops.
+canny_edge.c:460:5: note: loop with 14 iterations completely unrolled
+canny_edge.c:431:6: note: loop turned into non-loop; it never loops.
+canny_edge.c:431:6: note: loop with 7 iterations completely unrolled
+canny_edge.c:594:3: note: loop vectorized
+canny_edge.c:594:3: note: loop turned into non-loop; it never loops.
+canny_edge.c:594:3: note: loop with 6 iterations completely unrolled
+canny_edge.c:572:6: note: loop turned into non-loop; it never loops.
+canny_edge.c:572:6: note: loop with 3 iterations completely unrolled
+hysteresis.c:35:3: note: loop turned into non-loop; it never loops.
+hysteresis.c:35:3: note: loop with 9 iterations completely unrolled
+hysteresis.c:37:43: note: basic block vectorized
+hysteresis.c:33:43: note: basic block vectorized
+hysteresis.c:35:3: note: loop turned into non-loop; it never loops.
+hysteresis.c:35:3: note: loop with 9 iterations completely unrolled
+hysteresis.c:95:3: note: Loop 4 distributed: split to 0 loops and 1 library calls.
+hysteresis.c:86:3: note: loop vectorized
+hysteresis.c:86:3: note: loop versioned for vectorization because of possible aliasing
+hysteresis.c:73:5: note: loop vectorized
+hysteresis.c:73:5: note: loop versioned for vectorization because of possible aliasing
+hysteresis.c:54:6: note: loop turned into non-loop; it never loops.
+hysteresis.c:54:6: note: loop with 15 iterations completely unrolled
+hysteresis.c:54:6: note: loop turned into non-loop; it never loops.
+hysteresis.c:54:6: note: loop with 15 iterations completely unrolled
+hysteresis.c:33:43: note: basic block vectorized
+hysteresis.c:33:43: note: basic block vectorized
+hysteresis.c:33:43: note: basic block vectorized
+hysteresis.c:33:43: note: basic block vectorized
+hysteresis.c:188:3: note: loop vectorized
+hysteresis.c:188:3: note: loop versioned for vectorization because of possible aliasing
+hysteresis.c:171:6: note: loop turned into non-loop; it never loops.
+hysteresis.c:171:6: note: loop with 15 iterations completely unrolled
