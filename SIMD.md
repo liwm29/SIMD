@@ -38,7 +38,7 @@ typedef unsigned long long ull8x8 __attribute__((vector_size(64)));
 typedef short h2x8 __attribute__((vector_size(16)));
 typedef unsigned char uc1x8 __attribute__((vector_size(8)));
 ```
-如果想访问各个分量,建议定义成union [ref](https://stackoverflow.com/questions/1771945/c-how-to-access-elements-of-vector-using-gcc-sse-vector-extension)
+如果想访问各个分量,可以直接(float)a[0]访问不,也可以定义成union [ref](https://stackoverflow.com/questions/1771945/c-how-to-access-elements-of-vector-using-gcc-sse-vector-extension)
 ```c
 // 这里v4sf指 f4x4:4个4字节的float;v4sf是gcc 向量拓展的命名风格,见[文档/示例](https://gcc.gnu.org/onlinedocs/gcc/Vector-Extensions.html)
 // 事实上,f4x4也不算是标准的命名风格,但足够清晰

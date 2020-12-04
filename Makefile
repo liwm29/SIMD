@@ -1,2 +1,2 @@
 canny_edge: *.c
-	gcc -o $@ $^ -lm
+	gcc -o $@ $^ -lm -mavx

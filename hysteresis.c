@@ -3,10 +3,11 @@
  * This code was re-written by Mike Heath from original code obtained indirectly
  * from Michigan State University. heath@csee.usf.edu (Re-written in 1996).
  *******************************************************************************/
+#include <immintrin.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "funcProtocol.h"
-
+#include "typedef.h"
 #define VERBOSE 0
 
 #define NOEDGE 255
@@ -21,29 +22,71 @@
  * NAME: Mike Heath
  * DATE: 2/15/96
  *******************************************************************************/
-void follow_edges_wrapper(unsigned char* edgemapptr,
-                          short* edgemagptr,
-                          short lowval,
-                          int cols) {}
 void follow_edges(unsigned char* edgemapptr,
                   short* edgemagptr,
                   short lowval,
                   int cols) {
-  short* tempmagptr;
-  unsigned char* tempmapptr;
-  int i;
-  float thethresh;
-  int x[8] = {1, 1, 0, -1, -1, -1, 0, 1}, y[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+  ull8x8 edgemappter_v8 = {edgemapptr};
+  ull8x8 edgemagpter_v8 = {edgemagptr};
+  ull8x8 lowval_v8 = {lowval};
+  ull8x8 cols_v8 = {cols};
+  ull8x8 mask = {0, 0, 0, 0, 0, 0, 0, 0};
+  edgemappter_v8 = __builtin_shuffle(edgemappter_v8, mask);
+  edgemagpter_v8 = __builtin_shuffle(edgemagpter_v8, mask);
+  lowval_v8 = __builtin_shuffle(lowval_v8, mask);
+  cols_v8 = __builtin_shuffle(cols_v8, mask);
 
-  for (i = 0; i < 8; i++) {
-    tempmapptr = edgemapptr - y[i] * cols + x[i];
-    tempmagptr = edgemagptr - y[i] * cols + x[i];
-
-    if ((*tempmapptr == POSSIBLE_EDGE) && (*tempmagptr > lowval)) {
-      *tempmapptr = (unsigned char)EDGE;
-      follow_edges(tempmapptr, tempmagptr, lowval, cols);
+  follow_edges_inner(edgemappter_v8, edgemappter_v8, lowval_v8, cols_v8);
+}
+void follow_edges_inner(ull8x8 edgemapptr,
+                        ull8x8 edgemagptr,
+                        ull8x8 lowval,
+                        ull8x8 cols) {
+  ull8x8 x = {1, 1, 0, -1, -1, -1, 0, 1}, y = {0, 1, 1, 1, 0, -1, -1, -1};
+  ull8x8 a = y * cols + x;
+  ull8x8 tempmapptr = edgemapptr - a;
+  ull8x8 tempmagptr = edgemagptr - a;
+  ull8x8 tempmapptr_value = {**(unsigned char**)(&tempmapptr + 0),
+                             **(unsigned char**)(&tempmapptr + 1),
+                             **(unsigned char**)(&tempmapptr + 2),
+                             **(unsigned char**)(&tempmapptr + 3),
+                             **(unsigned char**)(&tempmapptr + 4),
+                             **(unsigned char**)(&tempmapptr + 5),
+                             **(unsigned char**)(&tempmapptr + 6),
+                             **(unsigned char**)(&tempmapptr + 7)};
+  ull8x8 tempmagptr_value = {
+      **(short**)(&tempmagptr + 0), **(short**)(&tempmagptr + 1),
+      **(short**)(&tempmagptr + 2), **(short**)(&tempmagptr + 3),
+      **(short**)(&tempmagptr + 4), **(short**)(&tempmagptr + 5),
+      **(short**)(&tempmagptr + 6), **(short**)(&tempmagptr + 7)};
+  ull8x8 mask1 = tempmapptr_value == POSSIBLE_EDGE;
+  ull8x8 mask2 = tempmagptr_value > lowval;
+  ull8x8 mask = mask1 & mask2;
+  for (int i = 0; i < 8; i++) {
+    if ((unsigned long long)mask[i] == 1) {
+      break;
     }
+    return;
   }
+  ull8x8 mask_inver = mask == 0;
+  ull8x8 tempmapptr_newvalue = mask * EDGE + mask_inver * tempmapptr_value;
+  **(unsigned char**)(&tempmapptr + 0) =
+      (unsigned char)(tempmapptr_newvalue)[0];
+  **(unsigned char**)(&tempmapptr + 1) =
+      (unsigned char)(tempmapptr_newvalue)[1];
+  **(unsigned char**)(&tempmapptr + 2) =
+      (unsigned char)(tempmapptr_newvalue)[2];
+  **(unsigned char**)(&tempmapptr + 3) =
+      (unsigned char)(tempmapptr_newvalue)[3];
+  **(unsigned char**)(&tempmapptr + 4) =
+      (unsigned char)(tempmapptr_newvalue)[4];
+  **(unsigned char**)(&tempmapptr + 5) =
+      (unsigned char)(tempmapptr_newvalue)[5];
+  **(unsigned char**)(&tempmapptr + 6) =
+      (unsigned char)(tempmapptr_newvalue)[6];
+  **(unsigned char**)(&tempmapptr + 7) =
+      (unsigned char)(tempmapptr_newvalue)[7];
+  follow_edges_inner(tempmapptr, tempmagptr, lowval, cols);
 }
 
 /*******************************************************************************
