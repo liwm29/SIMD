@@ -55,12 +55,21 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include "assertSize.h"
 #include "funcProtocol.h"
 #define VERBOSE 0
 #define BOOSTBLURFACTOR 90.0
 
+// return us
+long long getTimeOfDay() {
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return tv.tv_sec * 10000000 + tv.tv_usec;
+}
+
 int main(int argc, char* argv[]) {
+  long long start = getTimeOfDay();
   assertSize();
 
   char* infilename = NULL;  /* Name of the input image */
@@ -143,6 +152,8 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Error writing the edge image, %s.\n", outfilename);
     exit(1);
   }
+  long long end = getTimeOfDay();
+  printf("Time elapsed: %lld us\n", end - start);
 }
 
 /*******************************************************************************
@@ -273,7 +284,6 @@ void radian_direction(short int* delta_x,
                       float** dir_radians,
                       int xdirtag,
                       int ydirtag) {
-  int r, c, pos;
   float* dirim = NULL;
   double dx, dy;
 
@@ -286,19 +296,28 @@ void radian_direction(short int* delta_x,
   }
   *dir_radians = dirim;
 
-  for (r = 0, pos = 0; r < rows; r++) {
-    for (c = 0; c < cols; c++, pos++) {
-      dx = (double)delta_x[pos];
-      dy = (double)delta_y[pos];
-
-      if (xdirtag == 1)
-        dx = -dx;
-      if (ydirtag == -1)
-        dy = -dy;
-
-      dirim[pos] = (float)angle_radians(dx, dy);
-    }
+#pragma omp simd
+  for (int i = 0; i < rows * cols; i++) {
+    // dx = (double)delta_x[i] * (-1) * (2 * (xdirtag == 1) - 1);
+    // dy = (double)delta_y[i] * (-1) * (2 * (xdirtag == 1) - 1);
+    // xdirtag ,ydirtag is hard code to -1
+    dx = (double)delta_x[i];
+    dy = (double)delta_y[i] * (-1);
+    dirim[i] = (float)angle_radians(dx, dy);
   }
+  // for (r = 0, pos = 0; r < rows; r++) {
+  //   for (c = 0; c < cols; c++, pos++) {
+  //     dx = (double)delta_x[pos];
+  //     dy = (double)delta_y[pos];
+
+  //     if (xdirtag == 1)
+  //       dx = -dx;
+  //     if (ydirtag == -1)
+  //       dy = -dy;
+
+  //     dirim[pos] = (float)angle_radians(dx, dy);
+  //   }
+  // }
 }
 
 /*******************************************************************************
@@ -343,8 +362,6 @@ void magnitude_x_y(short int* delta_x,
                    int rows,
                    int cols,
                    short int** magnitude) {
-  int r, c, pos, sq1, sq2;
-
   /****************************************************************************
    * Allocate an image to store the magnitude of the gradient.
    ****************************************************************************/
@@ -353,13 +370,20 @@ void magnitude_x_y(short int* delta_x,
     exit(1);
   }
 
-  for (r = 0, pos = 0; r < rows; r++) {
-    for (c = 0; c < cols; c++, pos++) {
-      sq1 = (int)delta_x[pos] * (int)delta_x[pos];
-      sq2 = (int)delta_y[pos] * (int)delta_y[pos];
-      (*magnitude)[pos] = (short)(0.5 + sqrt((float)sq1 + (float)sq2));
-    }
+#pragma omp simd
+  for (int i = 0; i < rows * cols; i++) {
+    int sq1 = (int)delta_x[i] * (int)delta_x[i];
+    int sq2 = (int)delta_y[i] * (int)delta_y[i];
+    (*magnitude)[i] = (short)(0.5 + sqrt((float)sq1 + (float)sq2));
   }
+
+  // for (r = 0, pos = 0; r < rows; r++) {
+  //   for (c = 0; c < cols; c++, pos++) {
+  //     sq1 = (int)delta_x[pos] * (int)delta_x[pos];
+  //     sq2 = (int)delta_y[pos] * (int)delta_y[pos];
+  //     (*magnitude)[pos] = (short)(0.5 + sqrt((float)sq1 + (float)sq2));
+  //   }
+  // }
 }
 
 /*******************************************************************************
@@ -399,6 +423,7 @@ void derrivative_x_y(short int* smoothedim,
    ****************************************************************************/
   if (VERBOSE)
     printf("   Computing the X-direction derivative.\n");
+#pragma omp simd
   for (r = 0; r < rows; r++) {
     pos = r * cols;
     (*delta_x)[pos] = smoothedim[pos + 1] - smoothedim[pos];
@@ -415,11 +440,12 @@ void derrivative_x_y(short int* smoothedim,
    ****************************************************************************/
   if (VERBOSE)
     printf("   Computing the Y-direction derivative.\n");
-  for (c = 0; c < cols; c++) {
+#pragma omp simd
+  for (int c = 0; c < cols; c++) {
     pos = c;
     (*delta_y)[pos] = smoothedim[pos + cols] - smoothedim[pos];
     pos += cols;
-    for (r = 1; r < (rows - 1); r++, pos += cols) {
+    for (int r = 1; r < (rows - 1); r++, pos += cols) {
       (*delta_y)[pos] = smoothedim[pos + cols] - smoothedim[pos - cols];
     }
     (*delta_y)[pos] = smoothedim[pos] - smoothedim[pos - cols];
@@ -471,8 +497,9 @@ void gaussian_smooth(unsigned char* image,
    ****************************************************************************/
   if (VERBOSE)
     printf("   Bluring the image in the X-direction.\n");
-  for (r = 0; r < rows; r++) {
-    for (c = 0; c < cols; c++) {
+    #pragma omp simd
+  for (int r = 0; r < rows; r++) {
+    for (int c = 0; c < cols; c++) {
       dot = 0.0;
       sum = 0.0;
       for (cc = (-center); cc <= center; cc++) {
@@ -490,8 +517,9 @@ void gaussian_smooth(unsigned char* image,
    ****************************************************************************/
   if (VERBOSE)
     printf("   Bluring the image in the Y-direction.\n");
-  for (c = 0; c < cols; c++) {
-    for (r = 0; r < rows; r++) {
+    #pragma omp simd
+  for (int c = 0; c < cols; c++) {
+    for (int r = 0; r < rows; r++) {
       sum = 0.0;
       dot = 0.0;
       for (rr = (-center); rr <= center; rr++) {
@@ -528,7 +556,7 @@ void make_gaussian_kernel(float sigma, float** kernel, int* windowsize) {
     fprintf(stderr, "Error callocing the gaussian kernel array.\n");
     exit(1);
   }
-
+#pragma omp simd
   for (i = 0; i < (*windowsize); i++) {
     x = (float)(i - center);
     fx = pow(2.71828, -0.5 * x * x / (sigma * sigma)) /
@@ -536,7 +564,7 @@ void make_gaussian_kernel(float sigma, float** kernel, int* windowsize) {
     (*kernel)[i] = fx;
     sum += fx;
   }
-
+#pragma omp simd
   for (i = 0; i < (*windowsize); i++)
     (*kernel)[i] /= sum;
 

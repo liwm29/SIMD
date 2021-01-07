@@ -1,2 +1,2 @@
-canny_edge: *.c
-	gcc -o $@ $^ -lm
+canny_edge: *.c *.h
+	gcc -m64 -o $@ $^ -lm -fopenmp

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FUNCPROTOCOL_H
+#define FUNCPROTOCOL_H
 #include <stdio.h>
 
 int read_pgm_image(char* infilename,
@@ -57,3 +58,5 @@ void non_max_supp(short* mag,
                   int nrows,
                   int ncols,
                   unsigned char* result);
+
+#endif
